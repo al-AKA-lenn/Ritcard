@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ritcord — Ritual Discord Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+/* ── Reset & Base ─────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#060609;
+  --panel:#0d0d14;
+  --panel2:#111119;
+  --border:rgba(255,255,255,0.07);
+  --border-h:rgba(255,255,255,0.14);
+  --pink:#d946ef;
+  --pink-glow:rgba(217,70,239,0.25);
+  --pink-light:#f0abfc;
+  --green:#39ff88;
+  --green-glow:rgba(57,255,136,0.2);
+  --purple:#7c3aed;
+  --text:#f0eeff;
+  --muted:rgba(220,215,255,0.45);
+  --dim:rgba(220,215,255,0.25);
+  --mono:'Space Mono',monospace;
+  --sans:'Space Grotesk',sans-serif;
+  --r-sm:6px;--r-md:10px;--r-card:14px;
+}
+
+html{scroll-behavior:smooth}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  min-height:100vh;
+  overflow-x:hidden;
+  position:relative;
+}
+
+/* ── Background ───────────────────────────────────────── */
+.orb{
+  position:fixed;border-radius:50%;
+  filter:blur(90px);pointer-events:none;z-index:0;
+}
+.orb-1{
+  width:600px;height:600px;
+  background:radial-gradient(circle,rgba(124,58,237,0.2),transparent 70%);
+  top:-180px;left:-120px;
+  animation:drift 18s ease-in-out infinite alternate;
+}
+.orb-2{
+  width:500px;height:500px;
+  background:radial-gradient(circle,rgba(217,70,239,0.14),transparent 70%);
+  bottom:-80px;right:-80px;
+  animation:drift 22s ease-in-out infinite alternate-reverse;
+}
+@keyframes drift{
+  from{transform:translate(0,0) scale(1)}
+  to{transform:translate(40px,30px) scale(1.08)}
+}
+
+/* ── Page wrapper ─────────────────────────────────────── */
+.wrap{
+  position:relative;z-index:1;
+  max-width:720px;margin:0 auto;
+  padding:56px 20px 80px;
+  display:flex;flex-direction:column;
+  align-items:center;gap:36px;
+}
+
+/* ── HERO ─────────────────────────────────────────────── */
+.hero{
+  width:100%;display:flex;
+  flex-direction:column;align-items:center;
+  gap:18px;text-align:center;
+}
+
+/* Logo */
+.logo-row{display:flex;align-items:center;gap:14px}
+
+.logo-svg{
+  width:48px;height:48px;
+  filter:drop-shadow(0 0 10px rgba(57,255,136,0.7));
+  animation:glow-pulse 3s ease-in-out infinite;
+}
+@keyframes glow-pulse{
+  0%,100%{filter:drop-shadow(0 0 8px rgba(57,255,136,0.5))}
+  50%    {filter:drop-shadow(0 0 20px rgba(57,255,136,1))}
+}
+
+.logo-texts{display:flex;flex-direction:column;align-items:flex-start}
+.logo-name{
+  font-family:var(--mono);font-size:26px;font-weight:700;
+  letter-spacing:4px;color:var(--text);line-height:1;
+}
+.logo-sub{
+  font-family:var(--mono);font-size:8px;
+  letter-spacing:3px;color:var(--green);margin-top:4px;
+}
+
+.hero-desc{color:var(--muted);font-size:14px;max-width:400px;line-height:1.6}
+
+/* Input */
+.input-group{
+  display:flex;width:100%;max-width:480px;
+  border:1px solid var(--border);border-radius:var(--r-md);
+  overflow:hidden;background:var(--panel);
+  transition:border-color .3s,box-shadow .3s;
+}
+.input-group:focus-within{
+  border-color:rgba(217,70,239,.5);
+  box-shadow:0 0 0 3px var(--pink-glow),0 0 28px rgba(217,70,239,.08);
+}
+.input-wrap{flex:1;display:flex;align-items:center}
+.prefix{
+  font-family:var(--mono);font-size:11px;color:var(--dim);
+  padding:0 0 0 14px;white-space:nowrap;user-select:none;
+}
+.u-input{
+  flex:1;background:transparent;border:none;outline:none;
+  padding:13px 12px;font-family:var(--mono);font-size:13px;
+  color:var(--text);caret-color:var(--pink);
+}
+.u-input::placeholder{color:var(--dim)}
+
+.btn-ritual{
+  display:flex;align-items:center;gap:7px;
+  background:var(--pink);border:none;
+  padding:13px 20px;font-family:var(--sans);
+  font-size:13px;font-weight:700;color:#fff;
+  cursor:pointer;letter-spacing:.5px;white-space:nowrap;
+  transition:background .2s,box-shadow .2s;
+}
+.btn-ritual:hover{background:#c026d3;box-shadow:0 0 22px var(--pink-glow)}
+.btn-ritual:active{transform:scale(.98)}
+.btn-ritual:disabled{opacity:.6;cursor:not-allowed}
+
+/* Status */
+.status-line{
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:11px;
+  color:var(--muted);letter-spacing:1px;min-height:18px;
+}
+.s-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--dim);flex-shrink:0;
+  transition:background .3s,box-shadow .3s;
+}
+.s-dot.loading{background:var(--green);box-shadow:0 0 8px var(--green-glow);animation:blink 1.2s ease-in-out infinite}
+.s-dot.ok    {background:var(--green);box-shadow:0 0 8px var(--green-glow)}
+.s-dot.err   {background:#f43f5e}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── CARD SECTION ─────────────────────────────────────── */
+.card-section{
+  width:100%;display:none;
+  flex-direction:column;align-items:center;gap:14px;
+  animation:up .5s cubic-bezier(.23,1,.32,1) forwards;
+}
+.card-section.show{display:flex}
+@keyframes up{
+  from{opacity:0;transform:translateY(26px)}
+  to  {opacity:1;transform:translateY(0)}
+}
+
+/* ── Profile card ─────────────────────────────────────── */
+.p-card{
+  width:100%;background:var(--panel);
+  border:1px solid var(--border);border-radius:var(--r-card);
+  overflow:hidden;position:relative;
+}
+.p-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;
+  height:2px;z-index:2;
+  background:linear-gradient(90deg,var(--purple),var(--pink),var(--green));
+}
+
+/* Banner */
+.banner{
+  height:130px;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,#1a0535,#2d0a5a,#0a1533);
+}
+.banner-overlay{
+  position:absolute;inset:0;z-index:1;
+  background:linear-gradient(to bottom,transparent 0%,rgba(13,13,20,.9) 100%);
+}
+.ritual-badge{
+  position:absolute;top:12px;right:14px;z-index:3;
+  display:flex;align-items:center;gap:6px;
+  background:rgba(0,0,0,.6);
+  border:1px solid rgba(57,255,136,.3);
+  border-radius:4px;padding:4px 10px;
+  font-family:var(--mono);font-size:9px;
+  color:var(--green);letter-spacing:2px;
+  backdrop-filter:blur(6px);
+}
+.badge-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--green);
+  box-shadow:0 0 6px var(--green-glow);
+  animation:blink 2s ease-in-out infinite;
+}
+
+/* User row */
+.user-row{
+  display:flex;align-items:flex-start;
+  gap:16px;padding:0 20px 16px;position:relative;
+}
+
+/* Avatar */
+.avatar-area{
+  position:relative;margin-top:-40px;
+  flex-shrink:0;z-index:2;
+}
+.av-ring{
+  width:84px;height:84px;border-radius:50%;
+  background:linear-gradient(135deg,var(--purple),var(--pink));
+  padding:2px;animation:ring-glow 3s ease-in-out infinite;
+}
+@keyframes ring-glow{
+  0%,100%{box-shadow:0 0 10px rgba(217,70,239,.4)}
+  50%    {box-shadow:0 0 24px rgba(217,70,239,.75)}
+}
+.av-inner{
+  width:100%;height:100%;border-radius:50%;
+  background:var(--panel);padding:3px;
+}
+.av-img{
+  width:100%;height:100%;border-radius:50%;
+  object-fit:cover;display:block;background:var(--panel2);
+}
+.av-status{
+  position:absolute;bottom:4px;right:4px;
+  width:16px;height:16px;border-radius:50%;
+  border:3px solid var(--panel);background:var(--green);
+  box-shadow:0 0 8px var(--green-glow);z-index:3;
+}
+.av-status.idle   {background:#f59e0b;box-shadow:0 0 8px rgba(245,158,11,.4)}
+.av-status.dnd    {background:#f43f5e;box-shadow:0 0 8px rgba(244,63,94,.4)}
+.av-status.offline{background:#6b7280;box-shadow:none}
+
+/* User info */
+.user-info{flex:1;padding-top:8px;min-width:0}
+.dname-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dname{
+  font-size:22px;font-weight:700;color:var(--pink-light);
+  line-height:1.1;text-shadow:0 0 18px var(--pink-glow);
+}
+.vtick{font-size:14px;color:var(--pink);opacity:.7}
+.utag{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:3px}
+
+.roles{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.role{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;border-radius:var(--r-sm);
+  font-family:var(--mono);font-size:10px;border:1px solid;
+}
+.role.pur{background:rgba(124,58,237,.15);border-color:rgba(124,58,237,.4);color:#a78bfa}
+.role.pnk{background:rgba(217,70,239,.12);border-color:rgba(217,70,239,.35);color:var(--pink-light)}
+.role.grn{background:rgba(57,255,136,.08);border-color:rgba(57,255,136,.3);color:var(--green)}
+.rdot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.8}
+
+.bio{font-size:12px;color:var(--muted);margin-top:8px;font-style:italic;line-height:1.5}
+
+/* Right stats block */
+.stats-r{
+  display:flex;flex-direction:column;gap:10px;
+  padding-top:8px;min-width:130px;text-align:right;
+}
+.si{display:flex;flex-direction:column;gap:1px}
+.sv{
+  font-family:var(--mono);font-size:18px;
+  font-weight:700;color:var(--text);line-height:1;
+}
+.sv.pink{color:var(--pink-light);text-shadow:0 0 10px var(--pink-glow)}
+.sl{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--dim)}
+.ss{font-family:var(--mono);font-size:9px;color:var(--dim)}
+
+/* Lower stats */
+.lower{
+  display:flex;align-items:flex-end;gap:20px;
+  padding:12px 20px 16px;
+  border-top:1px solid var(--border);background:var(--panel2);
+  flex-wrap:wrap;
+}
+.big-grp{display:flex;align-items:flex-end;gap:20px;flex:1;flex-wrap:wrap}
+.bst{display:flex;flex-direction:column;gap:2px}
+.bst-lbl{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--dim)}
+.bst-val{
+  font-family:var(--mono);font-size:34px;
+  font-weight:700;line-height:1;color:var(--text);
+}
+.bst-val.grn{color:var(--green);text-shadow:0 0 14px var(--green-glow)}
+.quote{
+  font-size:12px;color:var(--muted);font-style:italic;
+  max-width:155px;line-height:1.5;padding-bottom:4px;
+}
+
+.mini-grid{display:flex;gap:20px;align-items:flex-end}
+.mst{display:flex;flex-direction:column;gap:1px;text-align:right}
+.mv{
+  font-family:var(--mono);font-size:22px;
+  font-weight:700;line-height:1;color:var(--text);
+}
+.mv.pink{color:var(--pink-light);text-shadow:0 0 10px var(--pink-glow)}
+.ml{font-family:var(--mono);font-size:7px;letter-spacing:1.5px;color:var(--dim)}
+.ms{font-family:var(--mono);font-size:9px;color:var(--dim)}
+
+/* Card footer */
+.c-foot{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 20px;border-top:1px solid var(--border);
+  background:rgba(0,0,0,.3);
+}
+.c-foot span{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--dim)}
+
+/* Action row */
+.act-row{display:flex;gap:10px}
+.act-btn{
+  display:flex;align-items:center;gap:7px;
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:9px 16px;
+  font-family:var(--sans);font-size:12px;
+  color:var(--muted);cursor:pointer;transition:all .2s;
+}
+.act-btn:hover{border-color:var(--border-h);color:var(--text);background:var(--panel2)}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:rgba(124,58,237,.4);border-radius:4px}
+
+/* Responsive */
+@media(max-width:580px){
+  .user-row{flex-wrap:wrap}
+  .stats-r{flex-direction:row;flex-wrap:wrap;gap:14px;width:100%;min-width:unset;text-align:left;padding-top:0;border-top:1px solid var(--border);padding-top:12px}
+  .lower{flex-direction:column;align-items:flex-start}
+  .mini-grid{gap:14px}
+  .bst-val{font-size:26px}
+  .dname{font-size:18px}
+}
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="wrap">
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+
+    <div class="logo-row">
+      <!-- Ritual knot logo (SVG) -->
+      <svg class="logo-svg" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="28,3 52,16 52,42 28,55 4,42 4,16" stroke="#39ff88" stroke-width="1.6" fill="none"/>
+        <polygon points="28,11 44,20 44,38 28,47 12,38 12,20" stroke="#39ff88" stroke-width="1" fill="none" opacity=".45"/>
+        <circle cx="28" cy="28" r="9" stroke="#39ff88" stroke-width="1.6" fill="none"/>
+        <line x1="28" y1="3"  x2="28" y2="19" stroke="#39ff88" stroke-width=".8" opacity=".35"/>
+        <line x1="28" y1="37" x2="28" y2="53" stroke="#39ff88" stroke-width=".8" opacity=".35"/>
+        <line x1="4"  y1="28" x2="19" y2="28" stroke="#39ff88" stroke-width=".8" opacity=".35"/>
+        <line x1="37" y1="28" x2="52" y2="28" stroke="#39ff88" stroke-width=".8" opacity=".35"/>
+      </svg>
+      <div class="logo-texts">
+        <span class="logo-name">RITCORD</span>
+        <span class="logo-sub">RITUAL DISCORD TRACKER</span>
+      </div>
+    </div>
+
+    <p class="hero-desc">Lihat profil Ritual Discord kamu — stats, rank, kontribusi, dan lebih lagi.</p>
+
+    <div class="input-group">
+      <div class="input-wrap">
+        <span class="prefix">discord.gg/</span>
+        <input type="text" id="uInput" class="u-input" placeholder="username_kamu"
+               maxlength="32" autocomplete="off" spellcheck="false"/>
+      </div>
+      <button class="btn-ritual" id="ritBtn" onclick="ritualize()">
+        Ritualize
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+          <path d="M3 8h10M9 4l4 4-4 4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="status-line">
+      <div class="s-dot" id="sDot"></div>
+      <span id="sText">Siap — masukkan username untuk memulai</span>
+    </div>
+
+  </section>
+
+  <!-- ===== CARD SECTION ===== -->
+  <section class="card-section" id="cardSec">
+
+    <div class="p-card" id="pCard">
+
+      <!-- Banner -->
+      <div class="banner" id="banner">
+        <div class="banner-overlay"></div>
+        <div class="ritual-badge">
+          <div class="badge-dot"></div>
+          RITUAL RITUALIZED
+        </div>
+      </div>
+
+      <!-- User row -->
+      <div class="user-row">
+
+        <!-- Avatar -->
+        <div class="avatar-area">
+          <div class="av-ring">
+            <div class="av-inner">
+              <img class="av-img" id="avImg" src="" alt="avatar"/>
+            </div>
+          </div>
+          <div class="av-status" id="avStatus"></div>
+        </div>
+
+        <!-- Info -->
+        <div class="user-info">
+          <div class="dname-row">
+            <h2 class="dname" id="dName">—</h2>
+            <span class="vtick">✦</span>
+          </div>
+          <div class="utag" id="uTag">@username</div>
+          <div class="roles" id="roles"></div>
+          <div class="bio" id="bio"></div>
+        </div>
+
+        <!-- Right stats -->
+        <div class="stats-r">
+          <div class="si">
+            <span class="sv" id="sContrib">—</span>
+            <span class="sl">CONTRIBUTIONS</span>
+            <span class="ss" id="sContribSub">—</span>
+          </div>
+          <div class="si">
+            <span class="sv pink" id="sMsg">—</span>
+            <span class="sl">TOTAL MESSAGES</span>
+            <span class="ss" id="sMsgSub">—</span>
+          </div>
+          <div class="si">
+            <span class="sv" id="sBless">—</span>
+            <span class="sl">BLESSINGS</span>
+            <span class="ss" id="sBlessSub">—</span>
+          </div>
+        </div>
+
+      </div><!-- /user-row -->
+
+      <!-- Lower stats -->
+      <div class="lower">
+        <div class="big-grp">
+          <div class="bst">
+            <span class="bst-lbl">RANK</span>
+            <span class="bst-val grn" id="sRank">—</span>
+          </div>
+          <div class="bst">
+            <span class="bst-lbl">LEVEL</span>
+            <span class="bst-val grn" id="sLevel">—</span>
+          </div>
+          <div class="quote" id="sQuote"></div>
+        </div>
+
+        <div class="mini-grid">
+          <div class="mst">
+            <span class="mv" id="sServers">—</span>
+            <span class="ml">SERVERS</span>
+            <span class="ms" id="sServersSub">—</span>
+          </div>
+          <div class="mst">
+            <span class="mv pink" id="sEvents">—</span>
+            <span class="ml">EVENT WATCHING</span>
+            <span class="ms" id="sEventsSub">—</span>
+          </div>
+          <div class="mst">
+            <span class="mv" id="sWriting">—</span>
+            <span class="ml">WRITING</span>
+            <span class="ms" id="sWritingSub">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="c-foot">
+        <span>PROOF PREVIEW</span>
+        <span id="sUserId">—</span>
+      </div>
+
+    </div><!-- /p-card -->
+
+    <!-- Actions -->
+    <div class="act-row">
+      <button class="act-btn" onclick="shareCard()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+          <path d="M14 2l-8 5M14 2l-5 12-3-5-5-3 13-4z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Share Card
+      </button>
+      <button class="act-btn" onclick="resetCard()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+          <path d="M2 8a6 6 0 0 1 10.47-4M14 8a6 6 0 0 1-10.47 4M13 4h-3M2.53 12H5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Cari Lagi
+      </button>
+    </div>
+
+  </section>
+
+</div><!-- /wrap -->
+
+<script>
+'use strict';
+
+/* ── DOM ─────────────────────────────────────────────────── */
+const uInput   = document.getElementById('uInput');
+const ritBtn   = document.getElementById('ritBtn');
+const sDot     = document.getElementById('sDot');
+const sText    = document.getElementById('sText');
+const cardSec  = document.getElementById('cardSec');
+
+uInput.addEventListener('keydown', e => { if (e.key === 'Enter') ritualize(); });
+
+/* ── Helpers ─────────────────────────────────────────────── */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function setStatus(msg, mode) {
+  sText.textContent = msg;
+  sDot.className = 's-dot' + (mode ? ' ' + mode : '');
+}
+
+function strHash(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function seededRand(seed, off = 0) {
+  const x = Math.sin(seed + off) * 10000;
+  return x - Math.floor(x);
+}
+
+function fmt(n) {
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+  return String(n);
+}
+
+/* ── Generate mock profile ───────────────────────────────── */
+function genProfile(username) {
+  const seed = strHash(username);
+  const r = off => seededRand(seed, off);
+
+  const rank     = 1  + Math.floor(r(1)  * 1500);
+  const level    = 1  + Math.floor(r(2)  * 80);
+  const contrib  = Math.floor(r(3) * 30);
+  const messages = 100 + Math.floor(r(4) * 9900);
+  const bless    = Math.floor(r(5) * 20);
+  const servers  = 1  + Math.floor(r(6)  * 10);
+  const events   = Math.floor(r(7) * 8);
+  const writing  = Math.floor(r(8) * 50);
+
+  const quotes = [
+    '"Laid Forger of Ritual ✨"',
+    '"Building in the void"',
+    '"Signal in the noise"',
+    '"Community is everything"',
+    '"Ritual every day"',
+    '"Shape the future"',
+    '"Early supporter 🔮"',
+    '"Lost in the protocol"',
+  ];
+
+  const allRoles = [
+    { label: 'Server Booster', cls: 'pur' },
+    { label: 'Ritual Member',  cls: 'pnk' },
+    { label: 'Contributor',    cls: 'grn' },
+    { label: 'Early Access',   cls: 'pur' },
+    { label: 'Community OG',   cls: 'pnk' },
+    { label: 'Moderator',      cls: 'grn' },
+  ];
+  const rc   = 2 + Math.floor(r(21) * 3);
+  const si   = Math.floor(r(22) * Math.max(1, allRoles.length - rc));
+  const roles = allRoles.slice(si, si + rc);
+
+  const statOpts = ['online','idle','dnd','offline'];
+  const sw = [0.55,0.2,0.15,0.1];
+  let stIdx = 0, acc = 0, roll = r(30);
+  for (let i = 0; i < sw.length; i++) { acc += sw[i]; if (roll < acc) { stIdx = i; break; } }
+
+  const banners = [
+    'linear-gradient(135deg,#1a0535,#2d0a5a 45%,#0a1533 75%,#0d0a20)',
+    'linear-gradient(135deg,#200a35,#3d0a5a 45%,#0a2533 75%,#0d0a20)',
+    'linear-gradient(135deg,#0a1535,#1d2a5a 45%,#0a0a33 75%,#0d0d20)',
+    'linear-gradient(135deg,#2a0520,#5a0a40 45%,#330a0a 75%,#200d0d)',
+  ];
+
+  const avatarSeed  = encodeURIComponent(username + '_ritual');
+  const avatarStyle = r(40) > 0.5 ? 'adventurer' : 'personas';
+  const avatarUrl   = `https://api.dicebear.com/7.x/${avatarStyle}/svg?seed=${avatarSeed}&backgroundColor=1a0535,2d0a5a,0a1533`;
+
+  return {
+    username,
+    displayName: username.charAt(0).toUpperCase() + username.slice(1).replace(/[_.-]/g,' '),
+    uTag:  '@' + username,
+    avatarUrl,
+    bannerGrad: banners[Math.floor(r(50) * banners.length)],
+    status: statOpts[stIdx],
+    roles,
+    quote: quotes[Math.floor(r(20) * quotes.length)],
+    rank, level, contrib, messages, bless, servers, events, writing,
+    csub: `+${Math.floor(r(10)*5)} TODAY`,
+    msub: `${fmt(Math.floor(r(11)*messages*.8))} MSGS`,
+    bsub: `+${Math.floor(r(12)*3)} TODAY`,
+    ssub: `${Math.floor(r(13)*servers*.7)} LIVE`,
+    esub: `${fmt(Math.floor(r(14)*500))} USERS`,
+    wsub: `${Math.floor(r(15)*writing*.9)} LIVE`,
+    userId: (900000000000000000n + BigInt(Math.floor(r(60)*1e17))).toString(),
+  };
+}
+
+/* ── Render ──────────────────────────────────────────────── */
+function render(p) {
+  /* Banner */
+  document.getElementById('banner').style.background = p.bannerGrad;
+
+  /* Avatar */
+  const avImg = document.getElementById('avImg');
+  avImg.src = p.avatarUrl;
+  avImg.onerror = () => {
+    avImg.style.display = 'none';
+    const inner = avImg.parentElement;
+    inner.style.background = `hsl(${strHash(p.username)%360},55%,28%)`;
+    const fb = document.createElement('div');
+    fb.textContent = p.displayName[0].toUpperCase();
+    fb.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;border-radius:50%';
+    inner.style.position = 'relative';
+    inner.appendChild(fb);
+  };
+
+  /* Status dot */
+  const avSt = document.getElementById('avStatus');
+  avSt.className = 'av-status ' + p.status;
+
+  /* Text */
+  document.getElementById('dName').textContent = p.displayName;
+  document.getElementById('uTag').textContent  = p.uTag;
+  document.getElementById('bio').textContent   = p.quote;
+  document.getElementById('sQuote').textContent = p.quote;
+
+  /* Roles */
+  const rolesEl = document.getElementById('roles');
+  rolesEl.innerHTML = '';
+  p.roles.forEach(ro => {
+    const sp = document.createElement('span');
+    sp.className = 'role ' + ro.cls;
+    sp.innerHTML = `<span class="rdot"></span>${ro.label}`;
+    rolesEl.appendChild(sp);
+  });
+
+  /* Right stats */
+  setText('sContrib',    p.contrib);
+  setText('sContribSub', p.csub);
+  setText('sMsg',        fmt(p.messages));
+  setText('sMsgSub',     p.msub);
+  setText('sBless',      p.bless);
+  setText('sBlessSub',   p.bsub);
+
+  /* Big stats */
+  setText('sRank',  '#' + p.rank);
+  setText('sLevel', p.level);
+
+  /* Mini stats */
+  setText('sServers',    p.servers);
+  setText('sServersSub', p.ssub);
+  setText('sEvents',     p.events);
+  setText('sEventsSub',  p.esub);
+  setText('sWriting',    p.writing);
+  setText('sWritingSub', p.wsub);
+
+  /* Footer */
+  setText('sUserId', p.userId);
+}
+
+function setText(id, val) {
+  document.getElementById(id).textContent = val;
+}
+
+/* ── Counter animation ───────────────────────────────────── */
+function countUp(id, target, dur = 650) {
+  const el = document.getElementById(id);
+  const hash = String(target).startsWith('#');
+  const num  = parseInt(String(target).replace('#',''));
+  if (isNaN(num)) return;
+  const t0 = performance.now();
+  (function step(now) {
+    const prog = Math.min((now - t0) / dur, 1);
+    const ease = 1 - Math.pow(1 - prog, 3);
+    el.textContent = (hash ? '#' : '') + fmt(Math.floor(num * ease));
+    if (prog < 1) requestAnimationFrame(step);
+    else el.textContent = hash ? '#' + num : fmt(num);
+  })(t0);
+}
+
+/* ── Main ────────────────────────────────────────────────── */
+async function ritualize() {
+  const raw = uInput.value.trim();
+  if (!raw || raw.length < 2 || /\s/.test(raw)) {
+    setStatus(raw ? `"${raw}" tidak valid — tanpa spasi` : 'Masukkan username dulu!', 'err');
+    return;
+  }
+
+  cardSec.classList.remove('show');
+  ritBtn.disabled = true;
+  setStatus('', '');
+
+  const steps = [
+    'Menghubungi server Ritual...',
+    `Mencari @${raw}...`,
+    'Memuat data profil Discord...',
+    'Menghitung stats komunitas...',
+    'Membangun kartu profil...',
+  ];
+
+  for (const s of steps) {
+    setStatus(s, 'loading');
+    await sleep(300 + Math.random() * 160);
+  }
+
+  const profile = genProfile(raw);
+  render(profile);
+
+  cardSec.classList.add('show');
+  cardSec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  await sleep(180);
+  countUp('sContrib',  profile.contrib,   500);
+  countUp('sMsg',      profile.messages,  700);
+  countUp('sBless',    profile.bless,     500);
+  countUp('sRank',    '#' + profile.rank, 850);
+  countUp('sLevel',    profile.level,     620);
+  countUp('sServers',  profile.servers,   400);
+  countUp('sEvents',   profile.events,    500);
+  countUp('sWriting',  profile.writing,   600);
+
+  setStatus(`✓ Profil @${raw} berhasil di-ritualize!`, 'ok');
+  ritBtn.disabled = false;
+}
+
+function shareCard() {
+  const u = uInput.value.trim();
+  const txt = `Cek profil Ritual Discord @${u} di Ritcord! — ritcord.xyz`;
+  navigator.clipboard.writeText(txt)
+    .then(() => setStatus('Link tersalin ke clipboard!', 'ok'))
+    .catch(() => {
+      if (navigator.share) navigator.share({ title: 'Ritcord', text: txt }).catch(()=>{});
+    });
+}
+
+function resetCard() {
+  cardSec.classList.remove('show');
+  uInput.value = '';
+  uInput.focus();
+  setStatus('Siap — masukkan username untuk memulai', '');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
